@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, Edit, Trash2 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import {
   Table,
@@ -13,6 +13,25 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { toast } from 'sonner';
 
 interface Product {
   id: string;
@@ -20,16 +39,34 @@ interface Product {
   sku: string;
   price: number;
   category_id: string | null;
+  description: string | null;
   categories?: { name: string } | null;
+}
+
+interface Category {
+  id: string;
+  name: string;
 }
 
 const Products = () => {
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  
+  const [formData, setFormData] = useState({
+    name: '',
+    sku: '',
+    price: '',
+    category_id: '',
+    description: '',
+  });
 
   useEffect(() => {
     loadProducts();
+    loadCategories();
   }, []);
 
   const loadProducts = async () => {
@@ -42,6 +79,7 @@ const Products = () => {
           sku,
           price,
           category_id,
+          description,
           categories (name)
         `)
         .order('created_at', { ascending: false });
@@ -50,9 +88,103 @@ const Products = () => {
       setProducts(data || []);
     } catch (error) {
       console.error('Error loading products:', error);
+      toast.error('Failed to load products');
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadCategories = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('id, name')
+        .order('name');
+
+      if (error) throw error;
+      setCategories(data || []);
+    } catch (error) {
+      console.error('Error loading categories:', error);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      const productData = {
+        name: formData.name,
+        sku: formData.sku,
+        price: parseFloat(formData.price),
+        category_id: formData.category_id || null,
+        description: formData.description || null,
+      };
+
+      if (editingProduct) {
+        const { error } = await supabase
+          .from('products')
+          .update(productData)
+          .eq('id', editingProduct.id);
+
+        if (error) throw error;
+        toast.success('Product updated successfully');
+      } else {
+        const { error } = await supabase
+          .from('products')
+          .insert([productData]);
+
+        if (error) throw error;
+        toast.success('Product added successfully');
+      }
+
+      setDialogOpen(false);
+      resetForm();
+      loadProducts();
+    } catch (error) {
+      console.error('Error saving product:', error);
+      toast.error('Failed to save product');
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this product?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('products')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      toast.success('Product deleted successfully');
+      loadProducts();
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      toast.error('Failed to delete product');
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      sku: '',
+      price: '',
+      category_id: '',
+      description: '',
+    });
+    setEditingProduct(null);
+  };
+
+  const openEditDialog = (product: Product) => {
+    setEditingProduct(product);
+    setFormData({
+      name: product.name,
+      sku: product.sku,
+      price: product.price.toString(),
+      category_id: product.category_id || '',
+      description: product.description || '',
+    });
+    setDialogOpen(true);
   };
 
   const filteredProducts = products.filter(
@@ -79,10 +211,91 @@ const Products = () => {
           <h1 className="text-3xl font-bold tracking-tight">Products</h1>
           <p className="text-muted-foreground">Manage your product inventory</p>
         </div>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Product
-        </Button>
+        <Dialog open={dialogOpen} onOpenChange={(open) => {
+          setDialogOpen(open);
+          if (!open) resetForm();
+        }}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Product
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[500px]">
+            <form onSubmit={handleSubmit}>
+              <DialogHeader>
+                <DialogTitle>{editingProduct ? 'Edit Product' : 'Add New Product'}</DialogTitle>
+                <DialogDescription>
+                  {editingProduct ? 'Update product information' : 'Add a new product to your inventory'}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="name">Product Name</Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="sku">SKU</Label>
+                  <Input
+                    id="sku"
+                    value={formData.sku}
+                    onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="price">Price</Label>
+                  <Input
+                    id="price"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.price}
+                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="category">Category</Label>
+                  <Select
+                    value={formData.category_id}
+                    onValueChange={(value) => setFormData({ ...formData, category_id: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map((category) => (
+                        <SelectItem key={category.id} value={category.id}>
+                          {category.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    rows={3}
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="submit">
+                  {editingProduct ? 'Update Product' : 'Add Product'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <Card className="p-6">
@@ -101,10 +314,6 @@ const Products = () => {
         {filteredProducts.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-muted-foreground">No products found</p>
-            <Button className="mt-4">
-              <Plus className="mr-2 h-4 w-4" />
-              Add Your First Product
-            </Button>
           </div>
         ) : (
           <Table>
@@ -131,9 +340,22 @@ const Products = () => {
                   </TableCell>
                   <TableCell>${product.price.toFixed(2)}</TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="sm">
-                      Edit
-                    </Button>
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openEditDialog(product)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDelete(product.id)}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
