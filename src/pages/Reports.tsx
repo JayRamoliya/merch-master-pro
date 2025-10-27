@@ -105,10 +105,10 @@ const Reports = () => {
         <p className="text-muted-foreground">Analytics and insights for your shop</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         <StatCard
           title="Total Revenue"
-          value={`$${stats.totalRevenue.toFixed(2)}`}
+          value={`₹${stats.totalRevenue.toFixed(2)}`}
           icon={DollarSign}
           description="All-time revenue"
         />
@@ -132,16 +132,16 @@ const Reports = () => {
         />
       </div>
 
-      <Card className="p-6">
-        <h2 className="text-xl font-semibold mb-4">Sales Overview</h2>
+      <Card className="p-4 md:p-6">
+        <h2 className="text-lg md:text-xl font-semibold mb-4">Sales Overview</h2>
         <div className="space-y-4">
-          <div className="flex justify-between items-center p-4 bg-accent rounded-lg">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 p-4 bg-accent rounded-lg">
             <div>
               <p className="font-medium">Average Sale Value</p>
               <p className="text-sm text-muted-foreground">Per transaction</p>
             </div>
-            <p className="text-2xl font-bold">
-              ${stats.totalSales > 0 ? (stats.totalRevenue / stats.totalSales).toFixed(2) : '0.00'}
+            <p className="text-xl sm:text-2xl font-bold">
+              ₹{stats.totalSales > 0 ? (stats.totalRevenue / stats.totalSales).toFixed(2) : '0.00'}
             </p>
           </div>
         </div>

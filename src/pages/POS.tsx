@@ -169,16 +169,16 @@ const POS = () => {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Point of Sale</h1>
-        <p className="text-muted-foreground">Process sales and generate invoices</p>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Point of Sale</h1>
+        <p className="text-sm md:text-base text-muted-foreground">Process sales and generate invoices</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
         {/* Products Section */}
         <div className="lg:col-span-2 space-y-4">
-          <Card className="p-4">
+          <Card className="p-4 md:p-6">
             <div className="relative mb-4">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -189,17 +189,17 @@ const POS = () => {
               />
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-[600px] overflow-y-auto">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 max-h-[600px] overflow-y-auto">
               {filteredProducts.map((product) => (
                 <Card
                   key={product.id}
-                  className="p-4 hover:bg-accent cursor-pointer transition-colors"
+                  className="p-3 md:p-4 hover:bg-accent cursor-pointer transition-colors"
                   onClick={() => addToCart(product)}
                 >
                   <div className="space-y-2">
-                    <p className="font-medium">{product.name}</p>
-                    <p className="text-sm text-muted-foreground">{product.sku}</p>
-                    <p className="text-lg font-bold text-primary">${product.price.toFixed(2)}</p>
+                    <p className="font-medium text-sm md:text-base">{product.name}</p>
+                    <p className="text-xs md:text-sm text-muted-foreground">{product.sku}</p>
+                    <p className="text-base md:text-lg font-bold text-primary">₹{product.price.toFixed(2)}</p>
                   </div>
                 </Card>
               ))}
@@ -209,10 +209,10 @@ const POS = () => {
 
         {/* Cart Section */}
         <div className="space-y-4">
-          <Card className="p-4">
+          <Card className="p-4 md:p-6">
             <div className="flex items-center gap-2 mb-4">
               <ShoppingCart className="h-5 w-5" />
-              <h2 className="text-lg font-semibold">Cart</h2>
+              <h2 className="text-base md:text-lg font-semibold">Cart</h2>
             </div>
 
             <div className="space-y-4 mb-4">
@@ -221,34 +221,37 @@ const POS = () => {
               ) : (
                 cart.map((item) => (
                   <div key={item.product.id} className="flex items-center gap-2 pb-4 border-b">
-                    <div className="flex-1">
-                      <p className="font-medium text-sm">{item.product.name}</p>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm truncate">{item.product.name}</p>
                       <p className="text-sm text-muted-foreground">
-                        ${item.product.price.toFixed(2)} each
+                        ₹{item.product.price.toFixed(2)} each
                       </p>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1 md:gap-2">
                       <Button
                         size="icon"
                         variant="outline"
+                        className="h-7 w-7 md:h-8 md:w-8"
                         onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
                       >
-                        <Minus className="h-4 w-4" />
+                        <Minus className="h-3 w-3 md:h-4 md:w-4" />
                       </Button>
-                      <span className="w-8 text-center">{item.quantity}</span>
+                      <span className="w-6 md:w-8 text-center text-sm">{item.quantity}</span>
                       <Button
                         size="icon"
                         variant="outline"
+                        className="h-7 w-7 md:h-8 md:w-8"
                         onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
                       >
-                        <Plus className="h-4 w-4" />
+                        <Plus className="h-3 w-3 md:h-4 md:w-4" />
                       </Button>
                       <Button
                         size="icon"
                         variant="ghost"
+                        className="h-7 w-7 md:h-8 md:w-8"
                         onClick={() => removeFromCart(item.product.id)}
                       >
-                        <Trash2 className="h-4 w-4 text-destructive" />
+                        <Trash2 className="h-3 w-3 md:h-4 md:w-4 text-destructive" />
                       </Button>
                     </div>
                   </div>
@@ -261,15 +264,15 @@ const POS = () => {
                 <div className="space-y-2 py-4 border-t">
                   <div className="flex justify-between text-sm">
                     <span>Subtotal:</span>
-                    <span>${calculateSubtotal().toFixed(2)}</span>
+                    <span>₹{calculateSubtotal().toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span>Tax (5%):</span>
-                    <span>${calculateTax().toFixed(2)}</span>
+                    <span>₹{calculateTax().toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between font-bold text-lg pt-2 border-t">
+                  <div className="flex justify-between font-bold text-base md:text-lg pt-2 border-t">
                     <span>Total:</span>
-                    <span>${calculateTotal().toFixed(2)}</span>
+                    <span>₹{calculateTotal().toFixed(2)}</span>
                   </div>
                 </div>
 

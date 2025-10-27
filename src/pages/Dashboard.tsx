@@ -101,32 +101,34 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground">Overview of your shop's performance</p>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-sm md:text-base text-muted-foreground">Overview of your shop's performance</p>
         </div>
-        <div className="flex gap-2">
-          <Button onClick={() => navigate('/products')}>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Button onClick={() => navigate('/products')} className="flex-1 sm:flex-none">
             <Plus className="mr-2 h-4 w-4" />
-            Add Product
+            <span className="hidden sm:inline">Add Product</span>
+            <span className="sm:hidden">Add</span>
           </Button>
-          <Button onClick={() => navigate('/pos')} variant="outline">
+          <Button onClick={() => navigate('/pos')} variant="outline" className="flex-1 sm:flex-none">
             <ShoppingCart className="mr-2 h-4 w-4" />
-            New Sale
+            <span className="hidden sm:inline">New Sale</span>
+            <span className="sm:hidden">Sale</span>
           </Button>
         </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Products</CardTitle>
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalProducts}</div>
+            <div className="text-xl sm:text-2xl font-bold">{stats.totalProducts}</div>
             <p className="text-xs text-muted-foreground">Active in inventory</p>
           </CardContent>
         </Card>
@@ -137,7 +139,7 @@ const Dashboard = () => {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.salesToday}</div>
+            <div className="text-xl sm:text-2xl font-bold">{stats.salesToday}</div>
             <p className="text-xs text-muted-foreground">Transactions completed</p>
           </CardContent>
         </Card>
@@ -148,7 +150,7 @@ const Dashboard = () => {
             <AlertTriangle className="h-4 w-4 text-warning" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-warning">{stats.lowStockCount}</div>
+            <div className="text-xl sm:text-2xl font-bold text-warning">{stats.lowStockCount}</div>
             <p className="text-xs text-muted-foreground">Items need restock</p>
           </CardContent>
         </Card>
@@ -169,17 +171,17 @@ const Dashboard = () => {
               {lowStockItems.map((item) => (
                 <div
                   key={item.id}
-                  className="flex items-center justify-between p-3 bg-warning/5 rounded-lg border border-warning/20"
+                  className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 p-3 bg-warning/5 rounded-lg border border-warning/20"
                 >
-                  <div>
-                    <p className="font-medium">{item.product_name}</p>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate">{item.product_name}</p>
                     <p className="text-sm text-muted-foreground">
                       {item.size && `Size: ${item.size}`}
                       {item.size && item.color && ' • '}
                       {item.color && `Color: ${item.color}`}
                     </p>
                   </div>
-                  <div className="text-right">
+                  <div className="text-left sm:text-right">
                     <Badge variant="outline" className="border-warning text-warning">
                       {item.quantity} left
                     </Badge>

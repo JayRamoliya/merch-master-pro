@@ -85,7 +85,7 @@ const Invoices = () => {
         <p className="text-muted-foreground">View and manage all sales invoices</p>
       </div>
 
-      <Card className="p-6">
+      <Card className="p-4 md:p-6">
         <div className="flex items-center gap-4 mb-6">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -104,47 +104,56 @@ const Invoices = () => {
             <p className="text-muted-foreground">No invoices found</p>
           </div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Invoice #</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Customer</TableHead>
-                <TableHead>Payment Method</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredSales.map((sale) => (
-                <TableRow key={sale.id}>
-                  <TableCell className="font-medium">
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-muted-foreground" />
-                      {sale.sale_number}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {format(new Date(sale.created_at), 'MMM dd, yyyy HH:mm')}
-                  </TableCell>
-                  <TableCell>{sale.customer_name || 'Walk-in Customer'}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="capitalize">
-                      {sale.payment_method || 'N/A'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={getPaymentStatusColor(sale.payment_status)}>
-                      {sale.payment_status || 'unknown'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right font-bold">
-                    ${sale.total_amount.toFixed(2)}
-                  </TableCell>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Invoice #</TableHead>
+                  <TableHead className="hidden sm:table-cell">Date</TableHead>
+                  <TableHead className="hidden md:table-cell">Customer</TableHead>
+                  <TableHead className="hidden lg:table-cell">Payment</TableHead>
+                  <TableHead className="hidden sm:table-cell">Status</TableHead>
+                  <TableHead className="text-right">Amount</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {filteredSales.map((sale) => (
+                  <TableRow key={sale.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        <div>
+                          <p className="font-medium">{sale.sale_number}</p>
+                          <p className="text-xs text-muted-foreground sm:hidden">
+                            {format(new Date(sale.created_at), 'MMM dd')}
+                          </p>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                      {format(new Date(sale.created_at), 'MMM dd, yyyy HH:mm')}
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      {sale.customer_name || 'Walk-in Customer'}
+                    </TableCell>
+                    <TableCell className="hidden lg:table-cell">
+                      <Badge variant="outline" className="capitalize">
+                        {sale.payment_method || 'N/A'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                      <Badge className={getPaymentStatusColor(sale.payment_status)}>
+                        {sale.payment_status || 'unknown'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right font-bold">
+                      ₹{sale.total_amount.toFixed(2)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         )}
       </Card>
     </div>
