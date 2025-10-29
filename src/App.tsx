@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import AppLayout from "./components/AppLayout";
 import Dashboard from "./pages/Dashboard";
 import Products from "./pages/Products";
+import Inventory from "./pages/Inventory";
 import POS from "./pages/POS";
 import Invoices from "./pages/Invoices";
 import Reports from "./pages/Reports";
@@ -36,6 +37,14 @@ const App = () => (
             element={
               <AppLayout>
                 <Products />
+              </AppLayout>
+            }
+          />
+          <Route
+            path="/inventory"
+            element={
+              <AppLayout>
+                <Inventory />
               </AppLayout>
             }
           />

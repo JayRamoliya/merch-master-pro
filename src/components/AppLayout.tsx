@@ -25,6 +25,7 @@ interface AppLayoutProps {
 const navigationItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
   { icon: Package, label: 'Products', path: '/products' },
+  { icon: Package, label: 'Inventory', path: '/inventory' },
   { icon: ShoppingCart, label: 'POS', path: '/pos' },
   { icon: FileText, label: 'Invoices', path: '/invoices' },
   { icon: BarChart3, label: 'Reports', path: '/reports' },
