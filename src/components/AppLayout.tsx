@@ -42,16 +42,20 @@ const AppLayout = ({ children }: AppLayoutProps) => {
   useEffect(() => {
     const setupAuth = async () => {
       const { data: { subscription } } = supabase.auth.onAuthStateChange(
-        async (event, session) => {
+        (event, session) => {
           if (session?.user) {
             setUser(session.user);
-            try {
-              const role = await checkUserRole(session.user.id);
-              setUserRole(role || 'admin'); // Default to admin if no role found
-            } catch (error) {
-              console.error('Error checking user role:', error);
-              setUserRole('admin'); // Default to admin on error
-            }
+            setUserRole('admin'); // Set default immediately
+            
+            // Defer Supabase call to prevent deadlock
+            setTimeout(() => {
+              checkUserRole(session.user.id).then(role => {
+                setUserRole(role || 'admin');
+              }).catch(error => {
+                console.error('Error checking user role:', error);
+                setUserRole('admin');
+              });
+            }, 0);
           } else {
             setUser(null);
             setUserRole(null);
@@ -66,13 +70,17 @@ const AppLayout = ({ children }: AppLayoutProps) => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         setUser(session.user);
-        try {
-          const role = await checkUserRole(session.user.id);
-          setUserRole(role || 'admin'); // Default to admin if no role found
-        } catch (error) {
-          console.error('Error checking user role:', error);
-          setUserRole('admin'); // Default to admin on error
-        }
+        setUserRole('admin'); // Set default immediately
+        
+        // Check role after initial setup
+        setTimeout(() => {
+          checkUserRole(session.user.id).then(role => {
+            setUserRole(role || 'admin');
+          }).catch(error => {
+            console.error('Error checking user role:', error);
+            setUserRole('admin');
+          });
+        }, 0);
       } else if (location.pathname !== '/auth') {
         navigate('/auth');
       }
