@@ -142,6 +142,7 @@ const StockAdjustment = () => {
 
       if (newQuantity < 0) {
         toast.error('Stock cannot be negative');
+        setLoading(false);
         return;
       }
 
@@ -151,9 +152,14 @@ const StockAdjustment = () => {
         .update({ quantity: newQuantity })
         .eq('id', selectedVariant);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Error updating stock:', updateError);
+        toast.error('Failed to adjust stock');
+        setLoading(false);
+        return;
+      }
 
-      // Log the adjustment
+      // Log the adjustment (non-blocking)
       const { error: logError } = await supabase
         .from('stock_logs')
         .insert([{
@@ -165,16 +171,19 @@ const StockAdjustment = () => {
           created_by: user.id,
         }]);
 
-      if (logError) throw logError;
+      if (logError) {
+        console.error('Error logging adjustment:', logError);
+        // Don't fail the whole operation if logging fails
+      }
 
       toast.success('Stock adjusted successfully');
       setQuantity('');
       setNote('');
-      loadCurrentStock(selectedVariant);
+      await loadCurrentStock(selectedVariant);
+      setLoading(false);
     } catch (error) {
       console.error('Error adjusting stock:', error);
       toast.error('Failed to adjust stock');
-    } finally {
       setLoading(false);
     }
   };
