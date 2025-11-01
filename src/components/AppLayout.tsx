@@ -12,6 +12,9 @@ import {
   Settings,
   LogOut,
   Menu,
+  Users,
+  Truck,
+  DollarSign,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -28,6 +31,9 @@ const navigationItems = [
   { icon: Package, label: 'Inventory', path: '/inventory' },
   { icon: ShoppingCart, label: 'POS', path: '/pos' },
   { icon: FileText, label: 'Invoices', path: '/invoices' },
+  { icon: Users, label: 'Customers', path: '/customers' },
+  { icon: Truck, label: 'Suppliers', path: '/suppliers' },
+  { icon: DollarSign, label: 'Expenses', path: '/expenses' },
   { icon: BarChart3, label: 'Reports', path: '/reports' },
   { icon: Settings, label: 'Settings', path: '/settings' },
 ];

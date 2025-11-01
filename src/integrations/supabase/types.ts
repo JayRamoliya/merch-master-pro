@@ -76,6 +76,69 @@ export type Database = {
           },
         ]
       }
+      customers: {
+        Row: {
+          address: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          phone: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          phone: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          phone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      expenses: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          created_by: string | null
+          date: string
+          id: string
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          category: string
+          created_at?: string
+          created_by?: string | null
+          date?: string
+          id?: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          date?: string
+          id?: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       product_variants: {
         Row: {
           color: string | null
@@ -178,6 +241,111 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      purchase_order_items: {
+        Row: {
+          cost_price: number
+          created_at: string
+          id: string
+          item_name: string
+          po_id: string
+          product_id: string
+          quantity: number
+          total_price: number
+          variant_id: string | null
+        }
+        Insert: {
+          cost_price: number
+          created_at?: string
+          id?: string
+          item_name: string
+          po_id: string
+          product_id: string
+          quantity: number
+          total_price: number
+          variant_id?: string | null
+        }
+        Update: {
+          cost_price?: number
+          created_at?: string
+          id?: string
+          item_name?: string
+          po_id?: string
+          product_id?: string
+          quantity?: number
+          total_price?: number
+          variant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_order_items_po_id_fkey"
+            columns: ["po_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_order_items_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_orders: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          date: string
+          id: string
+          payment_status: string
+          po_number: string
+          status: string
+          supplier_id: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          date?: string
+          id?: string
+          payment_status?: string
+          po_number: string
+          status?: string
+          supplier_id: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          date?: string
+          id?: string
+          payment_status?: string
+          po_number?: string
+          status?: string
+          supplier_id?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_orders_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       return_items: {
         Row: {
@@ -331,6 +499,7 @@ export type Database = {
         Row: {
           created_at: string | null
           created_by: string | null
+          customer_id: string | null
           customer_name: string | null
           id: string
           payment_method: string | null
@@ -342,6 +511,7 @@ export type Database = {
         Insert: {
           created_at?: string | null
           created_by?: string | null
+          customer_id?: string | null
           customer_name?: string | null
           id?: string
           payment_method?: string | null
@@ -353,6 +523,7 @@ export type Database = {
         Update: {
           created_at?: string | null
           created_by?: string | null
+          customer_id?: string | null
           customer_name?: string | null
           id?: string
           payment_method?: string | null
@@ -361,7 +532,15 @@ export type Database = {
           tax_amount?: number | null
           total_amount?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "sales_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       stock_logs: {
         Row: {
@@ -410,6 +589,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      suppliers: {
+        Row: {
+          address: string | null
+          company: string | null
+          contact_email: string | null
+          contact_phone: string
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          company?: string | null
+          contact_email?: string | null
+          contact_phone: string
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          company?: string | null
+          contact_email?: string | null
+          contact_phone?: string
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {

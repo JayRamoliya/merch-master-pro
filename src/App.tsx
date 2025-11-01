@@ -9,6 +9,9 @@ import Products from "./pages/Products";
 import Inventory from "./pages/Inventory";
 import POS from "./pages/POS";
 import Invoices from "./pages/Invoices";
+import Customers from "./pages/Customers";
+import Suppliers from "./pages/Suppliers";
+import Expenses from "./pages/Expenses";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
@@ -61,6 +64,30 @@ const App = () => (
             element={
               <AppLayout>
                 <Invoices />
+              </AppLayout>
+            }
+          />
+          <Route
+            path="/customers"
+            element={
+              <AppLayout>
+                <Customers />
+              </AppLayout>
+            }
+          />
+          <Route
+            path="/suppliers"
+            element={
+              <AppLayout>
+                <Suppliers />
+              </AppLayout>
+            }
+          />
+          <Route
+            path="/expenses"
+            element={
+              <AppLayout>
+                <Expenses />
               </AppLayout>
             }
           />
