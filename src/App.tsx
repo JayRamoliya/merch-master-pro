@@ -2,7 +2,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import AppLayout from "./components/AppLayout";
 import Dashboard from "./pages/Dashboard";
 import Products from "./pages/Products";
@@ -19,6 +21,38 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsAuthenticated(!!session);
+    };
+
+    checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(!!session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  if (isAuthenticated === null) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto" />
+          <p className="mt-4 text-sm text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return isAuthenticated ? <>{children}</> : <Navigate to="/auth" replace />;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -30,81 +64,101 @@ const App = () => (
           <Route
             path="/"
             element={
-              <AppLayout>
-                <Dashboard />
-              </AppLayout>
+              <ProtectedRoute>
+                <AppLayout>
+                  <Dashboard />
+                </AppLayout>
+              </ProtectedRoute>
             }
           />
           <Route
             path="/products"
             element={
-              <AppLayout>
-                <Products />
-              </AppLayout>
+              <ProtectedRoute>
+                <AppLayout>
+                  <Products />
+                </AppLayout>
+              </ProtectedRoute>
             }
           />
           <Route
             path="/inventory"
             element={
-              <AppLayout>
-                <Inventory />
-              </AppLayout>
+              <ProtectedRoute>
+                <AppLayout>
+                  <Inventory />
+                </AppLayout>
+              </ProtectedRoute>
             }
           />
           <Route
             path="/pos"
             element={
-              <AppLayout>
-                <POS />
-              </AppLayout>
+              <ProtectedRoute>
+                <AppLayout>
+                  <POS />
+                </AppLayout>
+              </ProtectedRoute>
             }
           />
           <Route
             path="/invoices"
             element={
-              <AppLayout>
-                <Invoices />
-              </AppLayout>
+              <ProtectedRoute>
+                <AppLayout>
+                  <Invoices />
+                </AppLayout>
+              </ProtectedRoute>
             }
           />
           <Route
             path="/customers"
             element={
-              <AppLayout>
-                <Customers />
-              </AppLayout>
+              <ProtectedRoute>
+                <AppLayout>
+                  <Customers />
+                </AppLayout>
+              </ProtectedRoute>
             }
           />
           <Route
             path="/suppliers"
             element={
-              <AppLayout>
-                <Suppliers />
-              </AppLayout>
+              <ProtectedRoute>
+                <AppLayout>
+                  <Suppliers />
+                </AppLayout>
+              </ProtectedRoute>
             }
           />
           <Route
             path="/expenses"
             element={
-              <AppLayout>
-                <Expenses />
-              </AppLayout>
+              <ProtectedRoute>
+                <AppLayout>
+                  <Expenses />
+                </AppLayout>
+              </ProtectedRoute>
             }
           />
           <Route
             path="/reports"
             element={
-              <AppLayout>
-                <Reports />
-              </AppLayout>
+              <ProtectedRoute>
+                <AppLayout>
+                  <Reports />
+                </AppLayout>
+              </ProtectedRoute>
             }
           />
           <Route
             path="/settings"
             element={
-              <AppLayout>
-                <Settings />
-              </AppLayout>
+              <ProtectedRoute>
+                <AppLayout>
+                  <Settings />
+                </AppLayout>
+              </ProtectedRoute>
             }
           />
           <Route path="*" element={<NotFound />} />
