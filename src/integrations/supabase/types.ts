@@ -542,6 +542,30 @@ export type Database = {
           },
         ]
       }
+      shop_settings: {
+        Row: {
+          created_at: string | null
+          id: string
+          shop_name: string
+          tax_rate: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          shop_name?: string
+          tax_rate?: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          shop_name?: string
+          tax_rate?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       stock_logs: {
         Row: {
           created_at: string | null
