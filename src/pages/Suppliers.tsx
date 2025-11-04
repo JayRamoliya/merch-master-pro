@@ -169,21 +169,22 @@ export default function Suppliers() {
   );
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-4 md:space-y-6 p-4 md:p-0">
+      <div className="flex flex-col gap-4 md:flex-row md:justify-between md:items-center">
         <div>
-          <h1 className="text-3xl font-bold">Suppliers</h1>
-          <p className="text-muted-foreground">Manage your supplier database</p>
+          <h1 className="text-2xl md:text-3xl font-bold">Suppliers</h1>
+          <p className="text-sm md:text-base text-muted-foreground">Manage your supplier database</p>
         </div>
         <div className="flex gap-2">
           <Dialog open={poDialogOpen} onOpenChange={setPODialogOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline">
+              <Button variant="outline" className="flex-1 md:flex-none">
                 <FileText className="mr-2 h-4 w-4" />
-                Create PO
+                <span className="hidden sm:inline">Create PO</span>
+                <span className="sm:hidden">PO</span>
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="w-[95vw] md:max-w-md">
               <DialogHeader>
                 <DialogTitle>Create Purchase Order</DialogTitle>
               </DialogHeader>
@@ -192,12 +193,13 @@ export default function Suppliers() {
           </Dialog>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button onClick={() => setEditingSupplier(null)}>
+              <Button onClick={() => setEditingSupplier(null)} className="flex-1 md:flex-none">
                 <Plus className="mr-2 h-4 w-4" />
-                Add Supplier
+                <span className="hidden sm:inline">Add Supplier</span>
+                <span className="sm:hidden">Add</span>
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="w-[95vw] md:max-w-md max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{editingSupplier ? 'Edit Supplier' : 'Add New Supplier'}</DialogTitle>
               </DialogHeader>
@@ -291,11 +293,12 @@ export default function Suppliers() {
           placeholder="Search suppliers..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="max-w-sm"
+          className="w-full md:max-w-sm"
         />
       </div>
 
-      <Card>
+      {/* Desktop Table View */}
+      <Card className="hidden md:block">
         <CardContent className="p-0">
           <Table>
             <TableHeader>
@@ -359,19 +362,65 @@ export default function Suppliers() {
         </CardContent>
       </Card>
 
+      {/* Mobile Card View */}
+      <div className="md:hidden space-y-4">
+        {loading ? (
+          <Card><CardContent className="p-4 text-center">Loading...</CardContent></Card>
+        ) : filteredSuppliers.length === 0 ? (
+          <Card><CardContent className="p-4 text-center">No suppliers found</CardContent></Card>
+        ) : (
+          filteredSuppliers.map((supplier) => (
+            <Card key={supplier.id}>
+              <CardContent className="p-4 space-y-3">
+                <div className="flex justify-between items-start">
+                  <div className="space-y-1">
+                    <h3 className="font-semibold text-lg">{supplier.name}</h3>
+                    {supplier.company && <p className="text-sm text-muted-foreground">{supplier.company}</p>}
+                  </div>
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="icon" onClick={() => handleView(supplier)}>
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        setEditingSupplier(supplier);
+                        setDialogOpen(true);
+                      }}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleDelete(supplier.id)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="space-y-1 text-sm">
+                  <p><span className="text-muted-foreground">Phone:</span> {supplier.contact_phone}</p>
+                  {supplier.contact_email && (
+                    <p><span className="text-muted-foreground">Email:</span> {supplier.contact_email}</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
+
       {viewingSupplier && (
         <Dialog open={!!viewingSupplier} onOpenChange={() => setViewingSupplier(null)}>
-          <DialogContent className="max-w-3xl">
+          <DialogContent className="w-[95vw] md:max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Supplier Details: {viewingSupplier.name}</DialogTitle>
+              <DialogTitle className="text-lg md:text-xl">Supplier Details: {viewingSupplier.name}</DialogTitle>
             </DialogHeader>
             <Tabs defaultValue="info">
-              <TabsList>
-                <TabsTrigger value="info">Information</TabsTrigger>
-                <TabsTrigger value="orders">Purchase Orders</TabsTrigger>
+              <TabsList className="w-full">
+                <TabsTrigger value="info" className="flex-1">Information</TabsTrigger>
+                <TabsTrigger value="orders" className="flex-1">Purchase Orders</TabsTrigger>
               </TabsList>
               <TabsContent value="info" className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Company</p>
                     <p>{viewingSupplier.company || '-'}</p>

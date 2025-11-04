@@ -154,20 +154,20 @@ export default function Expenses() {
   const totalExpenses = filteredExpenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-4 md:space-y-6 p-4 md:p-0">
+      <div className="flex flex-col gap-4 md:flex-row md:justify-between md:items-center">
         <div>
-          <h1 className="text-3xl font-bold">Expenses</h1>
-          <p className="text-muted-foreground">Track your business expenses</p>
+          <h1 className="text-2xl md:text-3xl font-bold">Expenses</h1>
+          <p className="text-sm md:text-base text-muted-foreground">Track your business expenses</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={() => setEditingExpense(null)}>
+            <Button onClick={() => setEditingExpense(null)} className="w-full md:w-auto">
               <Plus className="mr-2 h-4 w-4" />
               Add Expense
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="w-[95vw] md:max-w-md max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingExpense ? 'Edit Expense' : 'Add New Expense'}</DialogTitle>
             </DialogHeader>
@@ -253,20 +253,20 @@ export default function Expenses() {
         </Dialog>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex flex-col md:flex-row items-stretch md:items-center gap-4">
         <Card className="flex-1">
           <CardHeader>
-            <CardTitle className="text-lg">Total Expenses</CardTitle>
+            <CardTitle className="text-base md:text-lg">Total Expenses</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">${totalExpenses.toFixed(2)}</p>
+            <p className="text-2xl md:text-3xl font-bold">${totalExpenses.toFixed(2)}</p>
           </CardContent>
         </Card>
 
         <div className="flex items-center gap-2">
           <Filter className="h-4 w-4 text-muted-foreground" />
           <Select value={filterCategory} onValueChange={setFilterCategory}>
-            <SelectTrigger className="w-[200px]">
+            <SelectTrigger className="w-full md:w-[200px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -281,7 +281,8 @@ export default function Expenses() {
         </div>
       </div>
 
-      <Card>
+      {/* Desktop Table View */}
+      <Card className="hidden md:block">
         <CardContent className="p-0">
           <Table>
             <TableHeader>
@@ -337,6 +338,49 @@ export default function Expenses() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Mobile Card View */}
+      <div className="md:hidden space-y-4">
+        {loading ? (
+          <Card><CardContent className="p-4 text-center">Loading...</CardContent></Card>
+        ) : filteredExpenses.length === 0 ? (
+          <Card><CardContent className="p-4 text-center">No expenses found</CardContent></Card>
+        ) : (
+          filteredExpenses.map((expense) => (
+            <Card key={expense.id}>
+              <CardContent className="p-4 space-y-3">
+                <div className="flex justify-between items-start">
+                  <div className="space-y-1">
+                    <h3 className="font-semibold text-lg">{expense.category}</h3>
+                    <p className="text-sm text-muted-foreground">{new Date(expense.date).toLocaleDateString()}</p>
+                  </div>
+                  <div className="flex flex-col items-end gap-2">
+                    <p className="text-xl font-bold">${Number(expense.amount).toFixed(2)}</p>
+                    <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          setEditingExpense(expense);
+                          setDialogOpen(true);
+                        }}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleDelete(expense.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+                {expense.notes && (
+                  <p className="text-sm text-muted-foreground border-t pt-2">{expense.notes}</p>
+                )}
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
     </div>
   );
 }
