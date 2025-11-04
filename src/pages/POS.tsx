@@ -32,6 +32,7 @@ const POS = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [customerName, setCustomerName] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [loading, setLoading] = useState(false);
 
@@ -150,9 +151,29 @@ const POS = () => {
 
       toast.success('Sale completed successfully!');
       
+      // Send order details to WhatsApp if phone number is provided
+      if (phoneNumber) {
+        const orderDetails = cart.map(item => 
+          `${item.product.name} x${item.quantity} = ₹${item.total.toFixed(2)}`
+        ).join('\n');
+        
+        const message = `*New Order - ${saleNumber}*\n\n` +
+          `Customer: ${customerName || 'Walk-in Customer'}\n` +
+          `Phone: ${phoneNumber}\n\n` +
+          `*Order Details:*\n${orderDetails}\n\n` +
+          `Subtotal: ₹${calculateSubtotal().toFixed(2)}\n` +
+          `Tax (5%): ₹${calculateTax().toFixed(2)}\n` +
+          `*Total: ₹${calculateTotal().toFixed(2)}*\n\n` +
+          `Payment: ${paymentMethod.toUpperCase()}`;
+        
+        const whatsappUrl = `https://wa.me/${phoneNumber.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
+        window.open(whatsappUrl, '_blank');
+      }
+      
       // Reset form
       setCart([]);
       setCustomerName('');
+      setPhoneNumber('');
       setPaymentMethod('cash');
     } catch (error) {
       console.error('Error processing sale:', error);
@@ -284,6 +305,17 @@ const POS = () => {
                       placeholder="Walk-in Customer"
                       value={customerName}
                       onChange={(e) => setCustomerName(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label htmlFor="phone">Phone Number (WhatsApp)</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      placeholder="+91 9876543210"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
                     />
                   </div>
 
