@@ -11,8 +11,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, Plus, Minus, ShoppingCart, Trash2 } from 'lucide-react';
+import { Search, Plus, Minus, ShoppingCart, Trash2, User } from 'lucide-react';
 import { toast } from 'sonner';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 
 interface Product {
   id: string;
@@ -27,6 +40,13 @@ interface CartItem {
   total: number;
 }
 
+interface Customer {
+  id: string;
+  name: string;
+  phone: string;
+  email?: string;
+}
+
 const POS = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -35,10 +55,27 @@ const POS = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [loading, setLoading] = useState(false);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [customerPopoverOpen, setCustomerPopoverOpen] = useState(false);
 
   useEffect(() => {
     loadProducts();
+    loadCustomers();
   }, []);
+
+  const loadCustomers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('customers')
+        .select('id, name, phone, email')
+        .order('name');
+
+      if (error) throw error;
+      setCustomers(data || []);
+    } catch (error) {
+      console.error('Error loading customers:', error);
+    }
+  };
 
   const loadProducts = async () => {
     try {
@@ -133,6 +170,23 @@ const POS = () => {
         .single();
 
       if (saleError) throw saleError;
+
+      // Save customer if phone number is provided and doesn't exist
+      if (phoneNumber && customerName) {
+        const existingCustomer = customers.find(c => c.phone === phoneNumber);
+        if (!existingCustomer) {
+          const { error: customerError } = await supabase
+            .from('customers')
+            .insert([{
+              name: customerName,
+              phone: phoneNumber
+            }]);
+          
+          if (!customerError) {
+            loadCustomers(); // Reload customers list
+          }
+        }
+      }
 
       // Create sale items
       const saleItems = cart.map(item => ({
@@ -310,13 +364,58 @@ const POS = () => {
 
                   <div className="grid gap-2">
                     <Label htmlFor="phone">Phone Number (WhatsApp)</Label>
-                    <Input
-                      id="phone"
-                      type="tel"
-                      placeholder="+91 9876543210"
-                      value={phoneNumber}
-                      onChange={(e) => setPhoneNumber(e.target.value)}
-                    />
+                    <Popover open={customerPopoverOpen} onOpenChange={setCustomerPopoverOpen}>
+                      <PopoverTrigger asChild>
+                        <div className="relative">
+                          <Input
+                            id="phone"
+                            type="tel"
+                            placeholder="+91 9876543210"
+                            value={phoneNumber}
+                            onChange={(e) => {
+                              setPhoneNumber(e.target.value);
+                              if (e.target.value.length >= 3) {
+                                setCustomerPopoverOpen(true);
+                              }
+                            }}
+                          />
+                          {customers.filter(c => c.phone.includes(phoneNumber) && phoneNumber.length >= 3).length > 0 && (
+                            <User className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          )}
+                        </div>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[300px] p-0" align="start">
+                        <Command>
+                          <CommandInput placeholder="Search customers..." />
+                          <CommandList>
+                            <CommandEmpty>No customers found.</CommandEmpty>
+                            <CommandGroup>
+                              {customers
+                                .filter(c => 
+                                  phoneNumber.length >= 3 && 
+                                  (c.phone.includes(phoneNumber) || c.name.toLowerCase().includes(phoneNumber.toLowerCase()))
+                                )
+                                .map((customer) => (
+                                  <CommandItem
+                                    key={customer.id}
+                                    value={customer.phone}
+                                    onSelect={() => {
+                                      setPhoneNumber(customer.phone);
+                                      setCustomerName(customer.name);
+                                      setCustomerPopoverOpen(false);
+                                    }}
+                                  >
+                                    <div className="flex flex-col">
+                                      <span className="font-medium">{customer.name}</span>
+                                      <span className="text-sm text-muted-foreground">{customer.phone}</span>
+                                    </div>
+                                  </CommandItem>
+                                ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                   </div>
 
                   <div className="grid gap-2">

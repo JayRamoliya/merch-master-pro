@@ -11,8 +11,10 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Search, FileText } from 'lucide-react';
+import { Search, FileText, Download } from 'lucide-react';
 import { format } from 'date-fns';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 interface Sale {
   id: string;
@@ -67,6 +69,41 @@ const Invoices = () => {
     }
   };
 
+  const exportToCSV = () => {
+    try {
+      const headers = ['Invoice #', 'Date', 'Customer', 'Payment Method', 'Status', 'Tax Amount', 'Total Amount'];
+      const csvData = filteredSales.map(sale => [
+        sale.sale_number,
+        format(new Date(sale.created_at), 'MMM dd, yyyy HH:mm'),
+        sale.customer_name || 'Walk-in Customer',
+        sale.payment_method || 'N/A',
+        sale.payment_status || 'unknown',
+        sale.tax_amount?.toFixed(2) || '0.00',
+        sale.total_amount.toFixed(2)
+      ]);
+
+      const csvContent = [
+        headers.join(','),
+        ...csvData.map(row => row.map(cell => `"${cell}"`).join(','))
+      ].join('\n');
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `invoices_${format(new Date(), 'yyyy-MM-dd')}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast.success('Invoices exported successfully!');
+    } catch (error) {
+      console.error('Error exporting invoices:', error);
+      toast.error('Failed to export invoices');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -86,7 +123,7 @@ const Invoices = () => {
       </div>
 
       <Card className="p-4 md:p-6">
-        <div className="flex items-center gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 mb-6">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -96,6 +133,10 @@ const Invoices = () => {
               className="pl-10"
             />
           </div>
+          <Button onClick={exportToCSV} variant="outline" disabled={filteredSales.length === 0}>
+            <Download className="mr-2 h-4 w-4" />
+            Export CSV
+          </Button>
         </div>
 
         {filteredSales.length === 0 ? (
