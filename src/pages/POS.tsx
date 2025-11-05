@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, Plus, Minus, ShoppingCart, Trash2, User } from 'lucide-react';
+import { Search, Plus, Minus, ShoppingCart, Trash2, User, Scan } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   Command,
@@ -26,6 +26,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import { BarcodeScanner } from '@/components/pos/BarcodeScanner';
 
 interface Product {
   id: string;
@@ -57,11 +58,49 @@ const POS = () => {
   const [loading, setLoading] = useState(false);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [customerPopoverOpen, setCustomerPopoverOpen] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [keyboardBuffer, setKeyboardBuffer] = useState('');
 
   useEffect(() => {
     loadProducts();
     loadCustomers();
   }, []);
+
+  // Handle external barcode scanner (keyboard input)
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // Ignore if user is typing in an input field
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      // Enter key signals end of barcode scan
+      if (e.key === 'Enter' && keyboardBuffer.length > 0) {
+        handleBarcodeScanned(keyboardBuffer);
+        setKeyboardBuffer('');
+        return;
+      }
+
+      // Build up the barcode string
+      if (e.key.length === 1) {
+        setKeyboardBuffer(prev => prev + e.key);
+        
+        // Clear buffer after 100ms of no input (barcode scanners type fast)
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+          setKeyboardBuffer('');
+        }, 100);
+      }
+    };
+
+    window.addEventListener('keypress', handleKeyPress);
+    return () => {
+      window.removeEventListener('keypress', handleKeyPress);
+      clearTimeout(timeoutId);
+    };
+  }, [keyboardBuffer, products]);
 
   const loadCustomers = async () => {
     try {
@@ -89,6 +128,19 @@ const POS = () => {
     } catch (error) {
       console.error('Error loading products:', error);
       toast.error('Failed to load products');
+    }
+  };
+
+  const handleBarcodeScanned = (barcode: string) => {
+    const product = products.find(
+      p => p.sku.toLowerCase() === barcode.toLowerCase()
+    );
+
+    if (product) {
+      addToCart(product);
+      toast.success(`Added ${product.name} to cart`);
+    } else {
+      toast.error('Product not found with barcode: ' + barcode);
     }
   };
 
@@ -254,14 +306,24 @@ const POS = () => {
         {/* Products Section */}
         <div className="lg:col-span-2 space-y-4">
           <Card className="p-4 md:p-6">
-            <div className="relative mb-4">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search products..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
+            <div className="flex gap-2 mb-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search products..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setScannerOpen(true)}
+                title="Scan Barcode"
+              >
+                <Scan className="h-4 w-4" />
+              </Button>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 max-h-[600px] overflow-y-auto">
@@ -446,6 +508,13 @@ const POS = () => {
           </Card>
         </div>
       </div>
+
+      {/* Barcode Scanner */}
+      <BarcodeScanner
+        isOpen={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        onScanSuccess={handleBarcodeScanned}
+      />
     </div>
   );
 };
