@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, Edit, Trash2 } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Upload } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import {
   Table,
@@ -37,6 +37,7 @@ interface Product {
   id: string;
   name: string;
   sku: string;
+  barcode?: string | null;
   price: number;
   category_id: string | null;
   description: string | null;
@@ -59,10 +60,12 @@ const Products = () => {
   const [formData, setFormData] = useState({
     name: '',
     sku: '',
+    barcode: '',
     price: '',
     category_id: '',
     description: '',
   });
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadProducts();
@@ -77,6 +80,7 @@ const Products = () => {
           id,
           name,
           sku,
+          barcode,
           price,
           category_id,
           description,
@@ -115,6 +119,7 @@ const Products = () => {
       const productData = {
         name: formData.name,
         sku: formData.sku,
+        barcode: formData.barcode || null,
         price: parseFloat(formData.price),
         category_id: formData.category_id || null,
         description: formData.description || null,
@@ -168,6 +173,7 @@ const Products = () => {
     setFormData({
       name: '',
       sku: '',
+      barcode: '',
       price: '',
       category_id: '',
       description: '',
@@ -175,11 +181,62 @@ const Products = () => {
     setEditingProduct(null);
   };
 
+  const handleImportCSV = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const lines = text.split('\n').filter(line => line.trim());
+      
+      // Skip header row
+      const dataLines = lines.slice(1);
+      const productsToImport = [];
+
+      for (const line of dataLines) {
+        const values = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
+        if (values.length >= 3) {
+          productsToImport.push({
+            name: values[0],
+            sku: values[1],
+            barcode: values[2] || null,
+            price: parseFloat(values[3]) || 0,
+            category_id: null,
+            description: values[4] || null,
+          });
+        }
+      }
+
+      if (productsToImport.length === 0) {
+        toast.error('No valid products found in CSV');
+        return;
+      }
+
+      const { error } = await supabase
+        .from('products')
+        .insert(productsToImport);
+
+      if (error) throw error;
+      
+      toast.success(`Successfully imported ${productsToImport.length} products`);
+      loadProducts();
+    } catch (error) {
+      console.error('Error importing CSV:', error);
+      toast.error('Failed to import products');
+    }
+
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const openEditDialog = (product: Product) => {
     setEditingProduct(product);
     setFormData({
       name: product.name,
       sku: product.sku,
+      barcode: product.barcode || '',
       price: product.price.toString(),
       category_id: product.category_id || '',
       description: product.description || '',
@@ -211,16 +268,31 @@ const Products = () => {
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Products</h1>
           <p className="text-sm md:text-base text-muted-foreground">Manage your product inventory</p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={(open) => {
-          setDialogOpen(open);
-          if (!open) resetForm();
-        }}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Product
-            </Button>
-          </DialogTrigger>
+        <div className="flex gap-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv"
+            onChange={handleImportCSV}
+            className="hidden"
+          />
+          <Button
+            variant="outline"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <Upload className="mr-2 h-4 w-4" />
+            Import CSV
+          </Button>
+          <Dialog open={dialogOpen} onOpenChange={(open) => {
+            setDialogOpen(open);
+            if (!open) resetForm();
+          }}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Product
+              </Button>
+            </DialogTrigger>
           <DialogContent className="sm:max-w-[500px]">
             <form onSubmit={handleSubmit}>
               <DialogHeader>
@@ -246,6 +318,15 @@ const Products = () => {
                     value={formData.sku}
                     onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
                     required
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="barcode">Barcode</Label>
+                  <Input
+                    id="barcode"
+                    value={formData.barcode}
+                    onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
+                    placeholder="Optional"
                   />
                 </div>
                 <div className="grid gap-2">
@@ -296,6 +377,7 @@ const Products = () => {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       <Card className="p-4 md:p-6">

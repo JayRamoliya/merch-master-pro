@@ -14,6 +14,55 @@ export type Database = {
   }
   public: {
     Tables: {
+      bundle_items: {
+        Row: {
+          bundle_id: string
+          created_at: string | null
+          id: string
+          product_id: string
+          quantity: number
+          variant_id: string | null
+        }
+        Insert: {
+          bundle_id: string
+          created_at?: string | null
+          id?: string
+          product_id: string
+          quantity?: number
+          variant_id?: string | null
+        }
+        Update: {
+          bundle_id?: string
+          created_at?: string | null
+          id?: string
+          product_id?: string
+          quantity?: number
+          variant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bundle_items_bundle_id_fkey"
+            columns: ["bundle_id"]
+            isOneToOne: false
+            referencedRelation: "product_bundles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bundle_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bundle_items_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categories: {
         Row: {
           created_at: string | null
@@ -139,6 +188,39 @@ export type Database = {
         }
         Relationships: []
       }
+      product_bundles: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          price: number
+          sku: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          price: number
+          sku: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          price?: number
+          sku?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       product_variants: {
         Row: {
           color: string | null
@@ -182,6 +264,7 @@ export type Database = {
       }
       products: {
         Row: {
+          barcode: string | null
           category_id: string | null
           created_at: string | null
           description: string | null
@@ -192,6 +275,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          barcode?: string | null
           category_id?: string | null
           created_at?: string | null
           description?: string | null
@@ -202,6 +286,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          barcode?: string | null
           category_id?: string | null
           created_at?: string | null
           description?: string | null
