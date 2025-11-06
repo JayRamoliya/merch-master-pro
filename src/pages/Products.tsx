@@ -2,8 +2,9 @@ import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, Edit, Trash2, Upload } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Upload, Scan, Edit3 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Table,
   TableBody,
@@ -32,6 +33,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { toast } from 'sonner';
+import BarcodeScanner from '@/components/products/BarcodeScanner';
+import BulkEditDialog from '@/components/products/BulkEditDialog';
+import { z } from 'zod';
 
 interface Product {
   id: string;
@@ -56,6 +60,9 @@ const Products = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  const [bulkEditOpen, setBulkEditOpen] = useState(false);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -116,14 +123,26 @@ const Products = () => {
     e.preventDefault();
     
     try {
+      // Validate barcode length and format
+      if (formData.barcode && formData.barcode.length > 50) {
+        toast.error('Barcode must be less than 50 characters');
+        return;
+      }
+
       const productData = {
-        name: formData.name,
-        sku: formData.sku,
-        barcode: formData.barcode || null,
+        name: formData.name.trim().substring(0, 200),
+        sku: formData.sku.trim().substring(0, 50),
+        barcode: formData.barcode ? formData.barcode.trim().substring(0, 50) : null,
         price: parseFloat(formData.price),
         category_id: formData.category_id || null,
-        description: formData.description || null,
+        description: formData.description ? formData.description.trim().substring(0, 1000) : null,
       };
+
+      // Validate price
+      if (productData.price < 0) {
+        toast.error('Price cannot be negative');
+        return;
+      }
 
       if (editingProduct) {
         const { error } = await supabase
@@ -196,13 +215,16 @@ const Products = () => {
       for (const line of dataLines) {
         const values = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
         if (values.length >= 3) {
+          const price = parseFloat(values[3]) || 0;
+          if (price < 0) continue; // Skip products with negative prices
+          
           productsToImport.push({
-            name: values[0],
-            sku: values[1],
-            barcode: values[2] || null,
-            price: parseFloat(values[3]) || 0,
+            name: values[0].substring(0, 200),
+            sku: values[1].substring(0, 50),
+            barcode: values[2] ? values[2].substring(0, 50) : null,
+            price: price,
             category_id: null,
-            description: values[4] || null,
+            description: values[4] ? values[4].substring(0, 1000) : null,
           });
         }
       }
@@ -244,6 +266,32 @@ const Products = () => {
     setDialogOpen(true);
   };
 
+  const handleBarcodeScanned = (barcode: string) => {
+    setFormData({ ...formData, barcode: barcode.trim() });
+    toast.success('Barcode added!');
+  };
+
+  const toggleSelectProduct = (productId: string) => {
+    setSelectedProducts(prev =>
+      prev.includes(productId)
+        ? prev.filter(id => id !== productId)
+        : [...prev, productId]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedProducts.length === filteredProducts.length) {
+      setSelectedProducts([]);
+    } else {
+      setSelectedProducts(filteredProducts.map(p => p.id));
+    }
+  };
+
+  const handleBulkEditSuccess = () => {
+    setSelectedProducts([]);
+    loadProducts();
+  };
+
   const filteredProducts = products.filter(
     (product) =>
       product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -268,7 +316,7 @@ const Products = () => {
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Products</h1>
           <p className="text-sm md:text-base text-muted-foreground">Manage your product inventory</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <input
             ref={fileInputRef}
             type="file"
@@ -276,6 +324,15 @@ const Products = () => {
             onChange={handleImportCSV}
             className="hidden"
           />
+          {selectedProducts.length > 0 && (
+            <Button
+              variant="secondary"
+              onClick={() => setBulkEditOpen(true)}
+            >
+              <Edit3 className="mr-2 h-4 w-4" />
+              Edit {selectedProducts.length}
+            </Button>
+          )}
           <Button
             variant="outline"
             onClick={() => fileInputRef.current?.click()}
@@ -322,12 +379,23 @@ const Products = () => {
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="barcode">Barcode</Label>
-                  <Input
-                    id="barcode"
-                    value={formData.barcode}
-                    onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
-                    placeholder="Optional"
-                  />
+                  <div className="flex gap-2">
+                    <Input
+                      id="barcode"
+                      value={formData.barcode}
+                      onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
+                      placeholder="Optional"
+                      maxLength={50}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setScannerOpen(true)}
+                    >
+                      <Scan className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="price">Price (₹)</Label>
@@ -402,6 +470,12 @@ const Products = () => {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-12">
+                    <Checkbox
+                      checked={selectedProducts.length === filteredProducts.length && filteredProducts.length > 0}
+                      onCheckedChange={toggleSelectAll}
+                    />
+                  </TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead className="hidden sm:table-cell">SKU</TableHead>
                   <TableHead className="hidden md:table-cell">Category</TableHead>
@@ -412,6 +486,12 @@ const Products = () => {
               <TableBody>
                 {filteredProducts.map((product) => (
                   <TableRow key={product.id}>
+                    <TableCell>
+                      <Checkbox
+                        checked={selectedProducts.includes(product.id)}
+                        onCheckedChange={() => toggleSelectProduct(product.id)}
+                      />
+                    </TableCell>
                     <TableCell>
                       <div>
                         <p className="font-medium">{product.name}</p>
@@ -454,6 +534,20 @@ const Products = () => {
           </div>
         )}
       </Card>
+
+      <BarcodeScanner
+        isOpen={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        onScanSuccess={handleBarcodeScanned}
+      />
+
+      <BulkEditDialog
+        isOpen={bulkEditOpen}
+        onClose={() => setBulkEditOpen(false)}
+        selectedIds={selectedProducts}
+        categories={categories}
+        onSuccess={handleBulkEditSuccess}
+      />
     </div>
   );
 };
