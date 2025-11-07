@@ -250,7 +250,6 @@ const BulkEditDialog = ({ isOpen, onClose, selectedIds, categories, onSuccess }:
                   <SelectValue placeholder="Leave empty to keep current category" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Keep current category</SelectItem>
                   {categories.map((category) => (
                     <SelectItem key={category.id} value={category.id}>
                       {category.name}
