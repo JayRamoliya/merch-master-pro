@@ -211,16 +211,28 @@ const Products = () => {
       // Skip header row
       const dataLines = lines.slice(1);
       const productsToImport = [];
+      const skusInFile = new Set<string>();
+      const duplicatesInFile: string[] = [];
 
       for (const line of dataLines) {
         const values = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
         if (values.length >= 3) {
+          const sku = values[1].substring(0, 50);
           const price = parseFloat(values[3]) || 0;
-          if (price < 0) continue; // Skip products with negative prices
           
+          // Skip products with negative prices
+          if (price < 0) continue;
+          
+          // Check for duplicate SKUs within the CSV
+          if (skusInFile.has(sku)) {
+            duplicatesInFile.push(sku);
+            continue;
+          }
+          
+          skusInFile.add(sku);
           productsToImport.push({
             name: values[0].substring(0, 200),
-            sku: values[1].substring(0, 50),
+            sku: sku,
             barcode: values[2] ? values[2].substring(0, 50) : null,
             price: price,
             category_id: null,
@@ -234,17 +246,43 @@ const Products = () => {
         return;
       }
 
+      // Check for existing SKUs in database
+      const skusToCheck = productsToImport.map(p => p.sku);
+      const { data: existingProducts } = await supabase
+        .from('products')
+        .select('sku')
+        .in('sku', skusToCheck);
+
+      const existingSkus = new Set(existingProducts?.map(p => p.sku) || []);
+      
+      // Filter out products with existing SKUs
+      const newProducts = productsToImport.filter(p => !existingSkus.has(p.sku));
+      const skippedCount = productsToImport.length - newProducts.length;
+
+      if (newProducts.length === 0) {
+        toast.error('All products in CSV already exist in database');
+        return;
+      }
+
       const { error } = await supabase
         .from('products')
-        .insert(productsToImport);
+        .insert(newProducts);
 
       if (error) throw error;
       
-      toast.success(`Successfully imported ${productsToImport.length} products`);
+      let message = `Successfully imported ${newProducts.length} product${newProducts.length !== 1 ? 's' : ''}`;
+      if (skippedCount > 0) {
+        message += `. Skipped ${skippedCount} duplicate${skippedCount !== 1 ? 's' : ''}`;
+      }
+      if (duplicatesInFile.length > 0) {
+        message += `. Found ${duplicatesInFile.length} duplicate${duplicatesInFile.length !== 1 ? 's' : ''} in CSV`;
+      }
+      
+      toast.success(message);
       loadProducts();
     } catch (error) {
       console.error('Error importing CSV:', error);
-      toast.error('Failed to import products');
+      toast.error('Failed to import products. Please check the CSV format.');
     }
 
     // Reset file input
